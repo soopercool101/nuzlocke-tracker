@@ -8466,7 +8466,8 @@ function renderMain() {
 				'<thead>' +
 					'<tr>' +
 						'<th class="center aligned four wide">Location</th>' +
-						'<th class="center aligned four wide">Encounter</th>' +
+						'<th class="center aligned two wide">Encounter (Player 1)</th>' +
+						'<th class="center aligned two wide">Encounter (Player 2)</th>' +
 						'<th class="center aligned four wide">Nickname</th>' +
 						'<th class="center aligned three wide">Status</th>' +
 						'<th class="center aligned no-sort one wide disabled"></th>' +
@@ -8510,7 +8511,15 @@ function renderLocations(game, darkTheme) {
 				'<div data-name="' + (localStorage.getItem(game.id + location.value + '-name') ? escapeHTML(localStorage.getItem(game.id + location.value + '-name')) : '') + '" id="' + game.id + locationValue + '-encounter" class="ui' + (darkTheme ? ' inverted' : '') + ' fluid search selection long dropdown encounter-picker">' +
 					'<input value="' + (localStorage.getItem(game.id + location.value + '-encounter') ? escapeHTML(localStorage.getItem(game.id + location.value + '-encounter'), true) : '') + '" name="pokemon" type="hidden">' +
 					'<i class="dropdown icon"></i>' +
-					'<div class="default text">Encounter</div>' +
+					'<div class="default text">Encounter (Player 1)</div>' +
+					'<div class="menu"></div>' +
+				'</div>' +
+			'</td>' +
+			'<td data-sort-value="' + escapeHTML(localStorage.getItem(game.id + location.value + '-encounter2')) + '">' +
+				'<div data-name="' + (localStorage.getItem(game.id + location.value + '-name2') ? escapeHTML(localStorage.getItem(game.id + location.value + '-name2')) : '') + '" id="' + game.id + locationValue + '-encounter2" class="ui' + (darkTheme ? ' inverted' : '') + ' fluid search selection long dropdown encounter-picker">' +
+					'<input value="' + (localStorage.getItem(game.id + location.value + '-encounter2') ? escapeHTML(localStorage.getItem(game.id + location.value + '-encounter2'), true) : '') + '" name="pokemon" type="hidden">' +
+					'<i class="dropdown icon"></i>' +
+					'<div class="default text">Encounter (Player 2)</div>' +
 					'<div class="menu"></div>' +
 				'</div>' +
 			'</td>' +
@@ -8628,6 +8637,7 @@ function uploadFile(input) {
 function populateLocation(game, data) {
 	var id = game + data.id;
 	var encounterElm = $('#' + id + '-encounter');
+	var encounterElm2 = $('#' + id + '-encounter2');
 	var nicknameElm = $('#' + id + '-nickname');
 	var statusElm = $('#' + id + '-status');
 
@@ -8642,6 +8652,19 @@ function populateLocation(game, data) {
 		encounterElm.dropdown('clear');
 		localStorage.removeItem(id + '-encounter');
 		localStorage.removeItem(id + '-name');
+	}
+
+	if (data.encounter2 !== null && data.encounter2 !== '') {
+		encounterElm2.dropdown('set value', data.encounter2);
+		encounterElm2.dropdown('set text', '<img class="pkmn" src="img/' + data.encounter2 + '">' + data.name2);
+		encounterElm2.data('name', data.name2);
+		localStorage.setItem(id + '-encounter2', data.encounter2);
+		localStorage.setItem(id + '-name2', data.name2);
+	} else {
+		encounterElm2.closest('td').data('sortValue', '');
+		encounterElm2.dropdown('clear');
+		localStorage.removeItem(id + '-encounter2');
+		localStorage.removeItem(id + '-name2');
 	}
 
 	if (data.nickname !== null && data.nickname !== '') {
@@ -8664,20 +8687,26 @@ function populateLocation(game, data) {
 
 function clearLocation(id) {
 	var encounter = id + '-encounter';
+	var encounter2 = id + '-encounter2';
 	var nickname = id + '-nickname';
 	var status = id + '-status';
 	var name = id + '-name';
+	var name2 = id + '-name2';
 
 	$('#' + encounter).dropdown('clear');
 	$('#' + encounter).closest('td').data('sortValue', '');
+	$('#' + encounter2).dropdown('clear');
+	$('#' + encounter2).closest('td').data('sortValue', '');
 	$('#' + nickname).val('').closest('td').data('sortValue', '');
 	$('#' + status).dropdown('clear');
 	$('#' + status).closest('td').data('sortValue', '');
 
 	localStorage.removeItem(encounter);
+	localStorage.removeItem(encounter2);
 	localStorage.removeItem(nickname);
 	localStorage.removeItem(status);
 	localStorage.removeItem(name);
+	localStorage.removeItem(name2);
 }
 
 function sortLocations(game) {
@@ -8778,7 +8807,11 @@ function initTab(tab) {
 
 			elm.closest('td').data('sortValue', value);
 			elm.data('name', name);
-			localStorage.setItem(elm.prop('id').slice(0, -9) + 'name', regex.exec(name));
+			if(elm.prop('id').endsWith('2')) {
+				localStorage.setItem(elm.prop('id').slice(0, -10) + 'name2', regex.exec(name));
+			} else {
+				localStorage.setItem(elm.prop('id').slice(0, -9) + 'name', regex.exec(name));
+			}
 			localStorage.setItem(elm.prop('id'), value);
 			elm.find('.search').blur();
 		},
@@ -8841,12 +8874,14 @@ function saveData(game) {
 
 	games[game].locations.forEach(function(location) {
 		var encounter = localStorage.getItem(game + location.value + '-encounter');
+		var encounter2 = localStorage.getItem(game + location.value + '-encounter2');
 		var name = localStorage.getItem(game + location.value + '-name');
+		var name2 = localStorage.getItem(game + location.value + '-name2');
 		var nickname = localStorage.getItem(game + location.value + '-nickname');
 		var status = localStorage.getItem(game + location.value + '-status');
 
-		if (encounter !== null || name !== null || nickname !== null || status !== null) {
-			blobData.locations.push({'id': location.value, 'encounter': encounter, 'name': name, 'nickname': nickname, 'status': status});
+		if (encounter !== null || encounter2 !== null || name !== null || name2 !== null || nickname !== null || status !== null) {
+			blobData.locations.push({'id': location.value, 'encounter': encounter, 'encounter2': encounter2, 'name': name, 'name2': name2, 'nickname': nickname, 'status': status});
 		}
 	});
 
